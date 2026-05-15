@@ -144,6 +144,12 @@ class Tx {
 }
 
 void stop() {
+  if (cam != null) {
+    try {
+      cam.stop();
+    } catch (Exception e) {
+    }
+  }
   tx.dispose();
   super.stop();
 }
