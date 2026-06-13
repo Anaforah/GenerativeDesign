@@ -421,7 +421,7 @@ if (cam.available()) {
   {
     int panelX = 0;
     int panelW = 230;
-    int panelH = 44;
+    int panelH = 62;
     int panelY = height - panelH;
 
     noStroke();
@@ -432,19 +432,25 @@ if (cam.available()) {
     textAlign(LEFT, TOP);
     textSize(11);
 
+    // Time line
+    int curHour = (debugHourOverride >= 0) ? debugHourOverride : hour();
+    String timeStr = nf(curHour, 2) + ":" + nf(minute(), 2) + ":" + nf(second(), 2);
+    String timeMode = (debugHourOverride >= 0) ? " (debug)" : " (auto)";
+    text("Time: " + timeStr + timeMode, panelX + 6, panelY + 5);
+
     // Precipitation line
     String precipStr = nf(apiPrecipitation, 1, 2) + " mm/h";
     String precipFetch = (lastPrecipFetch < 0)
       ? "never"
       : nf((frameCount - lastPrecipFetch) / 30, 0) + "s ago";
-    text("Rain: " + precipStr + "  |  fetched: " + precipFetch, panelX + 6, panelY + 5);
+    text("Rain: " + precipStr + "  |  fetched: " + precipFetch, panelX + 6, panelY + 22);
 
     // Discharge line
     String dischargeStr = nf(apiDischarge, 1, 1) + " m³/s";
     String dischargeFetch = (lastDischargeFetch < 0)
       ? "never"
       : nf((frameCount - lastDischargeFetch) / 30, 0) + "s ago";
-    text("River: " + dischargeStr + "  |  fetched: " + dischargeFetch, panelX + 6, panelY + 22);
+    text("River: " + dischargeStr + "  |  fetched: " + dischargeFetch, panelX + 6, panelY + 39);
   }
 
   // botão debug para alterar hora (clicar para avançar, chega a 24 volta para auto)
