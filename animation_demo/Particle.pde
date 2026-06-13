@@ -38,11 +38,16 @@ class Particle {
       180 + 75*n
     );
 
+    float s = 2 + 4*n;
+    canvas.strokeWeight(s);
     canvas.point(x, y);
+    canvas.strokeWeight(1);
 
     if (random(1) < 0.05) {
       canvas.stroke(255, 150);
+      canvas.strokeWeight(2);
       canvas.point(x + random(-1,1), y + random(-1,1));
+      canvas.strokeWeight(1);
     }
   }
 }

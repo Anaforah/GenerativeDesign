@@ -1,4 +1,3 @@
-// MotionParticle class moved here from animation_demo.pde
 
 class MotionParticle {
   float x, y;
@@ -38,14 +37,19 @@ class MotionParticle {
     float a = constrain(life * 220, 0, 220);
     float size = constrain(2.0 + life * 6.0, 1.5, 8.0);
 
-    canvas.stroke(bright, bright, bright, a);
-    canvas.strokeWeight(1.5);
+    // keep white stroke color but use same weight behavior as Particle
+    canvas.stroke(255, a);
+
+    float s = 2 + 4*n;
+    canvas.strokeWeight(s);
     canvas.point(x, y);
+    canvas.strokeWeight(1);
 
     if (random(1) < 0.05) {
-      canvas.stroke(255, 200);
+      canvas.stroke(255, min(220, a));
+      canvas.strokeWeight(2);
       canvas.point(x + random(-1,1), y + random(-1,1));
+      canvas.strokeWeight(1);
     }
-    canvas.strokeWeight(1);
   }
 }

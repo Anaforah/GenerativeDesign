@@ -47,11 +47,6 @@ void draw() {
    fill(20);
    text("Hi LEDs!", 20, 30);
    hint(ENABLE_DEPTH_TEST);*/
-
-   PImage img = rx.getImage();
-
-if (img != null)
-  image(img,0,0);
 }
 
 void updateCamera() {
