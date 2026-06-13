@@ -28,88 +28,6 @@ int debugHourOverride = -1;
 // -------------------------
 
 int MAX_WAVES = 20;
-
-class WaveEvent {
-  float x;
-  float intensity;
-  float age;
-
-  WaveEvent(float x, float intensity) {
-    this.x = x;
-    this.intensity = intensity;
-    this.age = 0;
-  }
-}
-
-void mousePressed() {
-  float bx = width - 110;
-  float by = 10;
-  float bw = 100;
-  float bh = 28;
-  if (mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh) {
-    if (debugHourOverride < 0) debugHourOverride = 6;
-    else {
-      debugHourOverride++;
-      if (debugHourOverride >= 24) debugHourOverride = -1;
-    }
-    println("debugHourOverride = " + debugHourOverride);
-  }
-}
-
-// -------------------------
-// Motion particles para arrasto
-// -------------------------
-
-class MotionParticle {
-  float x, y;
-  float speed;
-  float life; // 1..0
-  float seed;
-
-  MotionParticle(float x_, float y_, float speed_, float life_) {
-    x = x_;
-    y = y_;
-    speed = speed_;
-    life = life_;
-    seed = random(1000);
-  }
-
-  void update() {
-    float angle = noise(x*0.01, y*0.05, zoff + seed) * TWO_PI * 4;
-
-    x += cos(angle) * speed;
-    y += sin(angle) * speed;
-
-    if (x < 0) x += canvasWidth;
-    if (x > canvasWidth) x -= canvasWidth;
-    if (y < 0) y += canvasHeight;
-    if (y > canvasHeight) y -= canvasHeight;
-
-    // arrasto na velocidade
-    speed *= 0.96;
-
-    // diminuir life
-    life -= 0.02;
-  }
-
-  void display() {
-    float n = noise(x*0.02, y*0.02, zoff + seed);
-    float bright = 180 + 75 * n;
-    float a = constrain(life * 220, 0, 220);
-    float size = constrain(2.0 + life * 6.0, 1.5, 8.0);
-
-    canvas.stroke(bright, bright, bright, a);
-    canvas.strokeWeight(1.5);
-    canvas.point(x, y);
-
-    if (random(1) < 0.05) {
-      canvas.stroke(255, 200);
-      canvas.point(x + random(-1,1), y + random(-1,1));
-    }
-    canvas.strokeWeight(1);
-  }
-}
-
 WaveEvent[] waves = new WaveEvent[MAX_WAVES];
 
 // -------------------------
@@ -142,24 +60,14 @@ void setup() {
   for (int i=0; i<N; i++) {
     p[i] = new Particle();
   }
-
-  // -------------------------
-  // CAMERA (IMPORTANTE: resolução maior para detecção)
-  // -------------------------
-
   cam = new Capture(this, 160, 90, 30);
   cam.start();
 
   prevFrame = createImage(160, 90, RGB);
 }
 
-// -------------------------
-
 void draw() {
 
-  // -------------------------
-  // LER CÂMARA
-  // -------------------------
 if (cam.available()) {
   cam.read();
 
@@ -189,10 +97,6 @@ if (cam.available()) {
       }
     }
   }
-
-  // -------------------------
-  // DETECÇÃO ROBUSTA
-  // -------------------------
 
   if (total > 50) {
 
@@ -419,53 +323,17 @@ void addWave(float x, float intensity) {
   waves[idx] = new WaveEvent(x, intensity);
 }
 
-// -------------------------
-// PARTÍCULAS (inalteradas)
-// -------------------------
-
-class Particle {
-
-  float x;
-  float y;
-  float speed;
-
-  Particle() {
-    x = random(canvasWidth);
-    y = random(canvasHeight);
-    speed = random(0.3, 1.2);
-  }
-
-  void update() {
-
-    float angle =
-      noise(x*0.01, y*0.05, zoff) *
-      TWO_PI * 4;
-
-    x += cos(angle) * speed;
-    y += sin(angle) * speed;
-
-    if (x < 0) x += canvasWidth;
-    if (x > canvasWidth) x -= canvasWidth;
-
-    if (y < 0) y += canvasHeight;
-    if (y > canvasHeight) y -= canvasHeight;
-  }
-
-  void display() {
-
-    float n = noise(x*0.02, y*0.02, zoff);
-
-    canvas.stroke(
-      50 + 150*n,
-      100 + 100*n,
-      180 + 75*n
-    );
-
-    canvas.point(x, y);
-
-    if (random(1) < 0.05) {
-      canvas.stroke(255, 150);
-      canvas.point(x + random(-1,1), y + random(-1,1));
+void mousePressed() {
+  float bx = width - 110;
+  float by = 10;
+  float bw = 100;
+  float bh = 28;
+  if (mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh) {
+    if (debugHourOverride < 0) debugHourOverride = 6;
+    else {
+      debugHourOverride++;
+      if (debugHourOverride >= 24) debugHourOverride = -1;
     }
+    println("debugHourOverride = " + debugHourOverride);
   }
 }
