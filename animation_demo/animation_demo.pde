@@ -161,6 +161,11 @@ void setup() {
 void draw() {
 
   // -------------------------
+  // API UPDATE (non-blocking, runs on background thread)
+  // -------------------------
+  apiUpdate();
+
+  // -------------------------
   // LER CÂMARA
   // -------------------------
 if (cam.available()) {
@@ -301,7 +306,7 @@ if (cam.available()) {
           float dist = abs(x - w.x);
 
           float influence =
-            w.intensity * 12 *
+            w.intensity * 12 * getDischargeAmplitude() *
             exp(-dist * 0.03) *
             sin(dist * 0.2 - w.age * 0.5);
 
@@ -362,6 +367,29 @@ if (cam.available()) {
     }
   }
 
+  // -------------------------
+  // RAIN LAYER (API-driven, drawn on top of everything)
+  // -------------------------
+  float rainIntensity = getPrecipIntensity();
+  if (rainIntensity > 0) {
+    // Number of flashing columns scales with rain intensity (1–35)
+    int rainDrops = int(rainIntensity * 35);
+    for (int r = 0; r < rainDrops; r++) {
+      int rx = int(random(canvasWidth));
+      // Brightness: heavier rain = more solid white, lighter rain = dimmer
+      float bright = random(0.4, 1.0) * rainIntensity;
+      int alpha = int(constrain(bright * 255, 60, 255));
+      // Flash 1–3 pixels tall per column (strip is only 24px)
+      int dropHeight = int(random(1, min(4, canvasHeight)));
+      int ry = int(random(canvasHeight - dropHeight));
+      canvas.stroke(255, 255, 255, alpha);
+      canvas.strokeWeight(1);
+      for (int dy = 0; dy < dropHeight; dy++) {
+        canvas.point(rx, ry + dy);
+      }
+    }
+  }
+
   canvas.endDraw();
 
   image(canvas, 0, 0, width, height);
@@ -385,6 +413,38 @@ if (cam.available()) {
     strokeWeight(2);
     line(sx, 0, sx, height);
     strokeWeight(1);
+  }
+
+  // -------------------------
+  // DEBUG: API INFO (canto inferior esquerdo)
+  // -------------------------
+  {
+    int panelX = 0;
+    int panelW = 230;
+    int panelH = 44;
+    int panelY = height - panelH;
+
+    noStroke();
+    fill(0, 150);
+    rect(panelX, panelY, panelW, panelH, 4);
+
+    fill(255);
+    textAlign(LEFT, TOP);
+    textSize(11);
+
+    // Precipitation line
+    String precipStr = nf(apiPrecipitation, 1, 2) + " mm/h";
+    String precipFetch = (lastPrecipFetch < 0)
+      ? "never"
+      : nf((frameCount - lastPrecipFetch) / 30, 0) + "s ago";
+    text("Rain: " + precipStr + "  |  fetched: " + precipFetch, panelX + 6, panelY + 5);
+
+    // Discharge line
+    String dischargeStr = nf(apiDischarge, 1, 1) + " m³/s";
+    String dischargeFetch = (lastDischargeFetch < 0)
+      ? "never"
+      : nf((frameCount - lastDischargeFetch) / 30, 0) + "s ago";
+    text("River: " + dischargeStr + "  |  fetched: " + dischargeFetch, panelX + 6, panelY + 22);
   }
 
   // botão debug para alterar hora (clicar para avançar, chega a 24 volta para auto)
