@@ -143,6 +143,9 @@ void setup() {
 
   frameRate(30);
 
+  // load last known API values from disk
+  apiLoadCache();
+
   canvas = createGraphics(canvasWidth, canvasHeight);
   tx = new Tx(canvasWidth, canvasHeight);
 
@@ -170,7 +173,6 @@ void draw() {
   // API UPDATE (non-blocking, runs on background thread)
   // -------------------------
   apiUpdate();
-  apiJitter();
 
   // -------------------------
   // LER CÂMARA
@@ -193,9 +195,12 @@ if (cam.available()) {
 
       int i = x + y * w;
 
-      float diff =
-        abs(brightness(cam.pixels[i]) -
-            brightness(prevFrame.pixels[i]));
+      color ca = cam.pixels[i];
+      color cb = prevFrame.pixels[i];
+      float diff = abs(
+        (0.299 * ((ca >> 16) & 0xFF) + 0.587 * ((ca >> 8) & 0xFF) + 0.114 * (ca & 0xFF)) -
+        (0.299 * ((cb >> 16) & 0xFF) + 0.587 * ((cb >> 8) & 0xFF) + 0.114 * (cb & 0xFF))
+      ) / 255.0 * 100.0;
 
       if (diff > 8) {
         sumX += x * diff;
@@ -226,7 +231,6 @@ if (cam.available()) {
     lastMappedX = mappedX;
     lastDetectedFrame = frameCount;
 
-    println("Motion detected - frame:" + frameCount + " avgX:" + avgX + " avgY:" + avgY + " mappedX:" + mappedX + " intensity:" + intensity + " total:" + total);
     addWave(mappedX, intensity);
 
     // criar uma motion particle com velocidade baseada na intensidade (speed) e vida
@@ -295,6 +299,7 @@ if (cam.available()) {
   // ONDAS  AS J SAO AS LIGHT BLUE
   // -------------------------
 
+  canvas.strokeWeight(1);
   for (int j=0; j<8; j++) {
 
     for (int x=0; x<canvasWidth; x++) {
@@ -362,7 +367,6 @@ if (cam.available()) {
         } else {
           // ONDAS BASE
           canvas.stroke((int)(brc*0.1), constrain((int)(200 + c*0.3), 0, 255), constrain((int)c, 0, 255), 120);
-          canvas.strokeWeight(1);
           canvas.point(x, y);
         }
       }
@@ -435,7 +439,7 @@ if (cam.available()) {
   // -------------------------
   if (SHOW_INFO_PANEL) {
     int panelX = 0;
-    int panelW = 230;
+    int panelW = 310;
     int panelH = 62;
     int panelY = height - panelH;
 
@@ -458,14 +462,14 @@ if (cam.available()) {
     String precipFetch = (lastPrecipFetch < 0)
       ? "never"
       : nf((frameCount - lastPrecipFetch) / 30, 0) + "s ago";
-    text("Rain: " + precipStr + "  |  fetched: " + precipFetch, panelX + 6, panelY + 22);
+    text("Rain: " + precipStr + " (~" + nf(apiPrecipitationDisplay, 1, 2) + ")  |  fetched: " + precipFetch, panelX + 6, panelY + 22);
 
     // Discharge line
     String dischargeStr = nf(apiDischarge, 1, 1) + " m³/s";
     String dischargeFetch = (lastDischargeFetch < 0)
       ? "never"
       : nf((frameCount - lastDischargeFetch) / 30, 0) + "s ago";
-    text("River: " + dischargeStr + "  |  fetched: " + dischargeFetch, panelX + 6, panelY + 39);
+    text("River: " + dischargeStr + " (~" + nf(apiDischargeDisplay, 1, 1) + ")  |  fetched: " + dischargeFetch, panelX + 6, panelY + 39);
   }
 
   // botão debug para alterar hora (clicar para avançar, chega a 24 volta para auto)
@@ -488,18 +492,15 @@ if (cam.available()) {
 // -------------------------
 
 void addWave(float x, float intensity) {
-  println("addWave() - frame:" + frameCount + " x:" + x + " intensity:" + intensity);
 
   for (int i=0; i<MAX_WAVES; i++) {
     if (waves[i] == null) {
       waves[i] = new WaveEvent(x, intensity);
-      println("  stored at slot " + i);
       return;
     }
   }
 
   int idx = int(random(MAX_WAVES));
-  println("  no empty slot, replacing slot " + idx);
   waves[idx] = new WaveEvent(x, intensity);
 }
 
