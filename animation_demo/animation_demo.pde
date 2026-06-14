@@ -258,9 +258,9 @@ if (cam.available()) {
     timeOfDay = hour() + minute() / 60.0 + second() / 3600.0;
   }
   float[] keyT  = {  0,   6,   9,  15,  19,  24 };
-  float[] keyR  = { 30,  80, 135,  70,  40,  30 };
-  float[] keyG  = { 30,  60, 206, 130,  40,  30 };
-  float[] keyB  = { 40,  90, 250, 180,  60,  40 };
+  float[] keyR  = { 10,  20, 135,  70,  15,  10 };
+  float[] keyG  = { 20,  50, 206, 130,  30,  20 };
+  float[] keyB  = { 80, 120, 250, 180, 100,  80 };
   float brc = keyR[0], bgc = keyG[0], bbc = keyB[0];
   for (int ki = 0; ki < keyT.length - 1; ki++) {
     if (timeOfDay >= keyT[ki] && timeOfDay < keyT[ki+1]) {
