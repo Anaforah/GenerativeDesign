@@ -1,4 +1,4 @@
-//test
+//test TOGGLES PARA PAINEL INFO NA LINHA 22
 
 
 import processing.video.*;
@@ -17,6 +17,12 @@ int N = 250;
 Particle[] p;
 
 float zoff = 0;
+
+// -------------------------
+// DEBUG TOGGLES — ligar/desligar aqui
+// -------------------------
+boolean SHOW_CAMERA_PREVIEW = true;  // câmera no canto superior esquerdo
+boolean SHOW_INFO_PANEL     = true;  // painel de API/hora no canto inferior esquerdo
 
 // debug: último x mapeado e frame da deteção
 float lastMappedX = -1;
@@ -164,6 +170,7 @@ void draw() {
   // API UPDATE (non-blocking, runs on background thread)
   // -------------------------
   apiUpdate();
+  apiJitter();
 
   // -------------------------
   // LER CÂMARA
@@ -207,11 +214,9 @@ if (cam.available()) {
     float avgX = sumX / total;
     float avgY = sumY / total;
 
-    // normalizar (0–1)
-    float nx = avgX / w;
-
-    // mapear para canvas principal
-    float mappedX = nx * canvasWidth;
+    // esticar mapeamento para cobrir strip inteiro
+    float mappedX = map(avgX, w * 0.25, w * 0.75, 0, canvasWidth);
+    mappedX = constrain(mappedX, 0, canvasWidth);
 
     // intensidade REAL estável
     float intensity = constrain(total * 0.0008, 0, 1);
@@ -242,22 +247,30 @@ if (cam.available()) {
   canvas.beginDraw();
 
   // cor de fundo consoante a hora do dia (manhã / tarde / noite)
-  int hh = (debugHourOverride >= 0) ? debugHourOverride : hour();
-  int brc, bgc, bbc;
-  if (hh >= 6 && hh < 12) {
-    // manhã - azul claro
-    brc = 135; bgc = 206; bbc = 250;
-  } else if (hh >= 12 && hh < 18) {
-    // tarde - azul mais escuro
-    brc = 70; bgc = 130; bbc = 180;
+  float timeOfDay;
+  if (debugHourOverride >= 0) {
+    timeOfDay = debugHourOverride;
   } else {
-    // noite - cinzento escuro
-    brc = 30; bgc = 30; bbc = 40;
+    timeOfDay = hour() + minute() / 60.0 + second() / 3600.0;
+  }
+  float[] keyT  = {  0,   6,   9,  15,  19,  24 };
+  float[] keyR  = { 30,  80, 135,  70,  40,  30 };
+  float[] keyG  = { 30,  60, 206, 130,  40,  30 };
+  float[] keyB  = { 40,  90, 250, 180,  60,  40 };
+  float brc = keyR[0], bgc = keyG[0], bbc = keyB[0];
+  for (int ki = 0; ki < keyT.length - 1; ki++) {
+    if (timeOfDay >= keyT[ki] && timeOfDay < keyT[ki+1]) {
+      float t = (timeOfDay - keyT[ki]) / (keyT[ki+1] - keyT[ki]);
+      brc = lerp(keyR[ki], keyR[ki+1], t);
+      bgc = lerp(keyG[ki], keyG[ki+1], t);
+      bbc = lerp(keyB[ki], keyB[ki+1], t);
+      break;
+    }
   }
 
   // overlay semi-transparente do tom de fundo para manter trailing
   canvas.noStroke();
-  canvas.fill(brc, bgc, bbc, 12);
+  canvas.fill((int)brc, (int)bgc, (int)bbc, 12);
   canvas.rect(0, 0, canvasWidth, canvasHeight);
 
   zoff += 0.003;
@@ -279,10 +292,10 @@ if (cam.available()) {
   }
 
   // -------------------------
-  // ONDAS
+  // ONDAS  AS J SAO AS LIGHT BLUE
   // -------------------------
 
-  for (int j=0; j<6; j++) {
+  for (int j=0; j<8; j++) {
 
     for (int x=0; x<canvasWidth; x++) {
 
@@ -348,7 +361,7 @@ if (cam.available()) {
 
         } else {
           // ONDAS BASE
-          canvas.stroke(0, constrain(200 + c*0.3, 0, 255), constrain(c, 0, 255), 120);
+          canvas.stroke((int)(brc*0.1), constrain((int)(200 + c*0.3), 0, 255), constrain((int)c, 0, 255), 120);
           canvas.strokeWeight(1);
           canvas.point(x, y);
         }
@@ -400,25 +413,27 @@ if (cam.available()) {
   // DEBUG: IMAGEM DA CÂMERA
   // -------------------------
 
-  image(cam, 0, 0, 120, 68);
-  noFill();
-  stroke(255);
-  rect(0, 0, 120, 68);
-
-  // debug: mostrar o mapeamento detectado no ecrã principal
-  if (lastMappedX >= 0 && frameCount - lastDetectedFrame < 30) {
-    float sx = map(lastMappedX, 0, canvasWidth, 0, width);
+  if (SHOW_CAMERA_PREVIEW) {
+    image(cam, 0, 0, 120, 68);
     noFill();
-    stroke(255, 0, 0);
-    strokeWeight(2);
-    line(sx, 0, sx, height);
-    strokeWeight(1);
+    stroke(255);
+    rect(0, 0, 120, 68);
+
+    // debug: mostrar o mapeamento detectado no ecrã principal
+    if (lastMappedX >= 0 && frameCount - lastDetectedFrame < 30) {
+      float sx = map(lastMappedX, 0, canvasWidth, 0, width);
+      noFill();
+      stroke(255, 0, 0);
+      strokeWeight(2);
+      line(sx, 0, sx, height);
+      strokeWeight(1);
+    }
   }
 
   // -------------------------
   // DEBUG: API INFO (canto inferior esquerdo)
   // -------------------------
-  {
+  if (SHOW_INFO_PANEL) {
     int panelX = 0;
     int panelW = 230;
     int panelH = 62;
@@ -521,20 +536,21 @@ class Particle {
   }
 
   void display() {
-
     float n = noise(x*0.02, y*0.02, zoff);
-
     canvas.stroke(
       50 + 150*n,
       100 + 100*n,
       180 + 75*n
     );
-
+    float s = 1 + 2.5*n;
+    canvas.strokeWeight(s);
     canvas.point(x, y);
-
+    canvas.strokeWeight(1);
     if (random(1) < 0.05) {
       canvas.stroke(255, 150);
+      canvas.strokeWeight(2);
       canvas.point(x + random(-1,1), y + random(-1,1));
+      canvas.strokeWeight(1);
     }
   }
 }

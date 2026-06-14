@@ -13,14 +13,26 @@ import java.io.InputStreamReader;
 float apiPrecipitation  = 0.0;   // mm/h, current hour
 float apiDischarge      = 80.0;  // m³/s, today (Mondego typical baseline)
 
+// --- Jitter (small random nudge applied each frame when data hasn't changed) ---
+float apiPrecipitationDisplay = 0.0;  // jittered value used by the sketch
+float apiDischargeDisplay     = 80.0;
+
+// -------------------------
+// Call once per draw() to nudge display values slightly around real values
+// -------------------------
+void apiJitter() {
+  apiPrecipitationDisplay = max(0, apiPrecipitation + random(-0.08, 0.08));
+  apiDischargeDisplay     = max(0,  apiDischarge     + random(-3.0,  3.0));
+}
+
 // --- Fetch timing ---
 int lastPrecipFetch    = -1;
 int lastDischargeFetch = -1;
 
-// 30 min * 60 sec * 30 fps = 54000 frames
-final int PRECIP_INTERVAL   = 54000;
-// 24 h * 60 min * 60 sec * 30 fps = 2592000 frames
-final int DISCHARGE_INTERVAL = 2592000;
+// 5 min * 60 sec * 30 fps = 9000 frames
+final int PRECIP_INTERVAL   = 9000;
+// 5 min * 60 sec * 30 fps = 9000 frames
+final int DISCHARGE_INTERVAL = 9000;
 
 // Coimbra coordinates
 final float LAT =  40.2111;
@@ -51,7 +63,7 @@ void apiUpdate() {
 // Mondego typical range: ~10 m³/s (dry) to ~600 m³/s (flood)
 // -------------------------
 float getDischargeAmplitude() {
-  return map(constrain(apiDischarge, 10, 600), 10, 600, 0.5, 2.5);
+  return map(constrain(apiDischargeDisplay, 10, 600), 10, 600, 0.5, 2.5);
 }
 
 // -------------------------
@@ -59,7 +71,7 @@ float getDischargeAmplitude() {
 // 0 = dry, 1 = heavy rain (>=10 mm/h)
 // -------------------------
 float getPrecipIntensity() {
-  return constrain(map(apiPrecipitation, 0, 10, 0, 1), 0, 1);
+  return constrain(map(apiPrecipitationDisplay, 0, 10, 0, 1), 0, 1);
 }
 
 // -------------------------
