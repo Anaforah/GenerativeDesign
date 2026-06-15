@@ -1,6 +1,3 @@
-//test TOGGLES PARA PAINEL INFO NA LINHA 22
-
-
 import processing.video.*;
 import java.util.ArrayList;
 
@@ -21,8 +18,8 @@ float zoff = 0;
 // -------------------------
 // DEBUG TOGGLES — ligar/desligar aqui
 // -------------------------
-boolean SHOW_CAMERA_PREVIEW = true;  // câmera no canto superior esquerdo
-boolean SHOW_INFO_PANEL     = true;  // painel de API/hora no canto inferior esquerdo
+boolean SHOW_CAMERA_PREVIEW = false;  // câmera no canto superior esquerdo
+boolean SHOW_INFO_PANEL     = false;  // painel de API/hora no canto inferior esquerdo
 
 // debug: último x mapeado e frame da deteção
 float lastMappedX = -1;
@@ -32,137 +29,9 @@ ArrayList<MotionParticle> motionParticles = new ArrayList<MotionParticle>();
 // override de hora para debug (-1 = automático)
 int debugHourOverride = -1;
 
-// -------------------------
-// ONDAS DE MOVIMENTO
-// -------------------------
-
 int MAX_WAVES = 20;
 
-class WaveEvent {
-  float x;
-  float intensity;
-  float age;
-
-  WaveEvent(float x, float intensity) {
-    this.x = x;
-    this.intensity = intensity;
-    this.age = 0;
-  }
-}
-
-void mousePressed() {
-  float bx = width - 110;
-  float by = 10;
-  float bw = 100;
-  float bh = 28;
-  if (mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh) {
-    if (debugHourOverride < 0) debugHourOverride = 6;
-    else {
-      debugHourOverride++;
-      if (debugHourOverride >= 24) debugHourOverride = -1;
-    }
-    println("debugHourOverride = " + debugHourOverride);
-  }
-}
-
-// -------------------------
-// Motion particles para arrasto
-// -------------------------
-
-class MotionParticle {
-  float x, y;
-  float speed;
-  float life; // 1..0
-  float seed;
-
-  MotionParticle(float x_, float y_, float speed_, float life_) {
-    x = x_;
-    y = y_;
-    speed = speed_;
-    life = life_;
-    seed = random(1000);
-  }
-
-  void update() {
-    float angle = noise(x*0.01, y*0.05, zoff + seed) * TWO_PI * 4;
-
-    x += cos(angle) * speed;
-    y += sin(angle) * speed;
-
-    if (x < 0) x += canvasWidth;
-    if (x > canvasWidth) x -= canvasWidth;
-    if (y < 0) y += canvasHeight;
-    if (y > canvasHeight) y -= canvasHeight;
-
-    // arrasto na velocidade
-    speed *= 0.96;
-
-    // diminuir life
-    life -= 0.02;
-  }
-
-  void display() {
-    float n = noise(x*0.02, y*0.02, zoff + seed);
-    float bright = 180 + 75 * n;
-    float a = constrain(life * 220, 0, 220);
-    float size = constrain(2.0 + life * 6.0, 1.5, 8.0);
-
-    canvas.stroke(bright, bright, bright, a);
-    canvas.strokeWeight(1.5);
-    canvas.point(x, y);
-
-    if (random(1) < 0.05) {
-      canvas.stroke(255, 200);
-      canvas.point(x + random(-1,1), y + random(-1,1));
-    }
-    canvas.strokeWeight(1);
-  }
-}
-
 WaveEvent[] waves = new WaveEvent[MAX_WAVES];
-
-// -------------------------
-// CHUVA — gotas que caem ao longo do tempo
-// -------------------------
-
-class RainDrop {
-  float x, y;
-  float speed;
-  int len;
-  float bright;
-
-  RainDrop(float intensity) {
-    x = random(canvasWidth);
-    // começa um pouco acima do topo, para entrar a "cair"
-    y = -random(0, 4);
-    len = int(random(1, min(4, canvasHeight)));
-    // chuva mais forte -> gotas caem mais rápido
-    speed = map(intensity, 0, 1, 1.0, 3.0) + len * 0.3;
-    speed *= random(0.85, 1.15);
-    bright = random(0.4, 1.0) * intensity;
-  }
-
-  void update() {
-    y += speed;
-  }
-
-  boolean isDone() {
-    return y - len > canvasHeight;
-  }
-
-  void display() {
-    int alpha = int(constrain(bright * 255, 60, 255));
-    canvas.stroke(255, 255, 255, alpha);
-    canvas.strokeWeight(1);
-    for (int dy = 0; dy < len; dy++) {
-      float py = y + dy;
-      if (py >= 0 && py < canvasHeight) {
-        canvas.point(x, py);
-      }
-    }
-  }
-}
-
 ArrayList<RainDrop> rainDrops = new ArrayList<RainDrop>();
 
 // -------------------------
@@ -200,7 +69,7 @@ void setup() {
   }
 
   // -------------------------
-  // CAMERA (IMPORTANTE: resolução maior para detecção)
+  // CAMERA
   // -------------------------
 
   cam = new Capture(this, 160, 90, 30);
@@ -213,14 +82,8 @@ void setup() {
 
 void draw() {
 
-  // -------------------------
-  // API UPDATE (non-blocking, runs on background thread)
-  // -------------------------
   apiUpdate();
 
-  // -------------------------
-  // LER CÂMARA
-  // -------------------------
 if (cam.available()) {
   cam.read();
 
@@ -253,10 +116,6 @@ if (cam.available()) {
       }
     }
   }
-
-  // -------------------------
-  // DETECÇÃO ROBUSTA
-  // -------------------------
 
   if (total > 50) {
 
@@ -468,6 +327,26 @@ if (cam.available()) {
 
   tx.send(canvas);
 
+}
+// -------------------------
+// ADICIONAR ONDA
+// -------------------------
+
+void addWave(float x, float intensity) {
+
+  for (int i=0; i<MAX_WAVES; i++) {
+    if (waves[i] == null) {
+      waves[i] = new WaveEvent(x, intensity);
+      return;
+    }
+  }
+
+  int idx = int(random(MAX_WAVES));
+  waves[idx] = new WaveEvent(x, intensity);
+}
+
+/*
+
   // -------------------------
   // DEBUG: IMAGEM DA CÂMERA
   // -------------------------
@@ -488,7 +367,6 @@ if (cam.available()) {
       strokeWeight(1);
     }
   }
-
   // -------------------------
   // DEBUG: API INFO (canto inferior esquerdo)
   // -------------------------
@@ -540,73 +418,20 @@ if (cam.available()) {
   textSize(12);
   String label = (debugHourOverride < 0) ? "Hour: auto" : "Hour: " + debugHourOverride;
   text(label, bx + bw/2, by + bh/2);
-}
 
-// -------------------------
-// ADICIONAR ONDA
-// -------------------------
 
-void addWave(float x, float intensity) {
-
-  for (int i=0; i<MAX_WAVES; i++) {
-    if (waves[i] == null) {
-      waves[i] = new WaveEvent(x, intensity);
-      return;
+void mousePressed() {
+  float bx = width - 110;
+  float by = 10;
+  float bw = 100;
+  float bh = 28;
+  if (mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh) {
+    if (debugHourOverride < 0) debugHourOverride = 6;
+    else {
+      debugHourOverride++;
+      if (debugHourOverride >= 24) debugHourOverride = -1;
     }
-  }
-
-  int idx = int(random(MAX_WAVES));
-  waves[idx] = new WaveEvent(x, intensity);
-}
-
-// -------------------------
-// PARTÍCULAS (inalteradas)
-// -------------------------
-
-class Particle {
-
-  float x;
-  float y;
-  float speed;
-
-  Particle() {
-    x = random(canvasWidth);
-    y = random(canvasHeight);
-    speed = random(0.3, 1.2);
-  }
-
-  void update() {
-
-    float angle =
-      noise(x*0.01, y*0.05, zoff) *
-      TWO_PI * 4;
-
-    x += cos(angle) * speed;
-    y += sin(angle) * speed;
-
-    if (x < 0) x += canvasWidth;
-    if (x > canvasWidth) x -= canvasWidth;
-
-    if (y < 0) y += canvasHeight;
-    if (y > canvasHeight) y -= canvasHeight;
-  }
-
-  void display() {
-    float n = noise(x*0.02, y*0.02, zoff);
-    canvas.stroke(
-      50 + 150*n,
-      100 + 100*n,
-      180 + 75*n
-    );
-    float s = 1 + 2.5*n;
-    canvas.strokeWeight(s);
-    canvas.point(x, y);
-    canvas.strokeWeight(1);
-    if (random(1) < 0.05) {
-      canvas.stroke(255, 150);
-      canvas.strokeWeight(2);
-      canvas.point(x + random(-1,1), y + random(-1,1));
-      canvas.strokeWeight(1);
-    }
+    println("debugHourOverride = " + debugHourOverride);
   }
 }
+*/
