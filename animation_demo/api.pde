@@ -1,7 +1,25 @@
-// -------------------------
-// API.pde
-// Fetches Open-Meteo weather (precipitation) and flood (river discharge)
-// data for Coimbra, Portugal. Holds last known values between fetches.
+/*
+ api.pde
+
+ Purpose:
+ - Fetch precipitation and river discharge data from Open-Meteo APIs for
+   Coimbra, Portugal. Stores last known values on disk and exposes helper
+   functions used by the main sketch:
+     - `getPrecipIntensity()` returns a 0..1 intensity used by rain spawning
+     - `getDischargeAmplitude()` and `getDischargeSpeedMultiplier()` control
+       wave amplitude and speed
+
+ Important configuration flags (can be modified in this file):
+ - `SIMULATED_RAIN_MODE` : enable simulated rainfall when API reports zero
+ - `FORCE_SIMULATED_RAIN` : force simulation even when API provides values
+ - `FORCE_MAX_DISCHARGE`  : override discharge to `MAX_DISCHARGE_VALUE`
+
+ Notes on debugging:
+ - Network errors may occur when contacting the APIs; `httpGet()` handles
+   timeouts. Check console logs or enable stack traces in the catch blocks
+   for more details.
+*/
+
 // -------------------------
 
 import java.net.URL;
