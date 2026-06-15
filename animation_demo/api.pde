@@ -129,6 +129,22 @@ float getDischargeAmplitude() {
 }
 
 // -------------------------
+// Returns wave SPEED multiplier from river discharge.
+// 80 m3/s (the default/cached discharge value, i.e. "current" behaviour)
+// maps to 1.0x speed. Lower discharge -> calmer/slower stripes,
+// higher discharge -> more frantic/faster stripes (up to 3x at 600 m3/s).
+// -------------------------
+float getDischargeSpeedMultiplier() {
+  float d = constrain(apiDischargeDisplay, 10, 600);
+  float baseline = 80.0;
+  if (d <= baseline) {
+    return map(d, 10, baseline, 0.5, 1.0);
+  } else {
+    return map(d, baseline, 600, 1.0, 3.0);
+  }
+}
+
+// -------------------------
 // Returns precipitation intensity 0.0 – 1.0
 // -------------------------
 float getPrecipIntensity() {
