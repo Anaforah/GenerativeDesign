@@ -182,30 +182,41 @@ void fetchPrecipitation() {
 }
 
 // -------------------------
-// Fetch today's river discharge from Open-Meteo flood API
+// Fetch today's river discharge from Open-Meteo flood API.
+// Tries two known subdomains; silently falls back to cached value on failure.
 // -------------------------
 void fetchDischarge() {
   lastDischargeFetch = frameCount;
   new Thread(new Runnable() {
     public void run() {
-      try {
-        String url =
-          "https://flood.open-meteo.com/v1/flood" +
-          "?latitude=" + LAT +
-          "&longitude=" + LON +
-          "&daily=river_discharge" +
-          "&forecast_days=1";
-        String json = httpGet(url);
-        if (json == null) return;
-        float val = parseJsonArrayFirstFloat(json, "river_discharge");
-        if (!Float.isNaN(val)) {
-          apiDischarge = val;
-          refreshDischargeDisplay();
-          apiSaveCache();
-          println("[API] River discharge: " + apiDischarge + " m³/s  display: " + apiDischargeDisplay);
-        }
-      } catch (Exception e) {
-        println("[API] Discharge fetch error: " + e.getMessage());
+      String[] hosts = {
+        "https://flood-api.open-meteo.com/v1/flood",
+        "https://flood.open-meteo.com/v1/flood"
+      };
+      String params =
+        "?latitude=" + LAT +
+        "&longitude=" + LON +
+        "&daily=river_discharge" +
+        "&forecast_days=1";
+
+      String json = null;
+      for (String host : hosts) {
+        json = httpGet(host + params);
+        if (json != null) break;
+        println("[API] Discharge: trying next host...");
+      }
+
+      if (json == null) {
+        println("[API] Discharge unavailable — keeping cached value (" + apiDischarge + " m³/s)");
+        return;
+      }
+
+      float val = parseJsonArrayFirstFloat(json, "river_discharge");
+      if (!Float.isNaN(val)) {
+        apiDischarge = val;
+        refreshDischargeDisplay();
+        apiSaveCache();
+        println("[API] River discharge: " + apiDischarge + " m³/s  display: " + apiDischargeDisplay);
       }
     }
   }).start();
@@ -233,7 +244,9 @@ String httpGet(String urlStr) {
     br.close();
     return sb.toString();
   } catch (Exception e) {
-    println("[API] httpGet error: " + e.getMessage());
+    // Extract just the host for cleaner log output
+    String host = urlStr.replaceAll("^(https?://[^/]+).*", "$1");
+    println("[API] httpGet failed (" + host + "): " + e.getMessage());
     return null;
   }
 }
