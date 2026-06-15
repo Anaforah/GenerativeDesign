@@ -1,3 +1,11 @@
+/*
+ particle.pde
+
+ Purpose:
+ - Background particle class used to render the subtle moving stripes in the
+   main canvas. Each `Particle` has a per-frame `update()` and `display()`.
+*/
+
 class Particle {
 
   float x;

@@ -1,3 +1,31 @@
+/*
+ animation_demo.pde
+
+ Overview:
+ - Main Processing sketch that composes particle stripes, motion-driven waves
+   and a rain layer. Reads weather/flood data from `api.pde` and uses a
+   (simulated) precipitation intensity to spawn `RainDrop` instances.
+
+ Key files and classes used by this sketch:
+ - `api.pde`         : fetches or simulates precipitation and discharge values
+ - `WaveEvent.pde`   : `WaveEvent` struct (movement events produced from camera)
+ - `MotionParticle.pde`: `MotionParticle` class (visual trailing particles)
+ - `particle.pde`    : `Particle` class for background particles
+ - `raindrop.pde`    : `RainDrop` class for rain rendering
+
+ Controls / debug toggles (in-code):
+ - `SHOW_CAMERA_PREVIEW` (bool) — show camera preview overlay
+ - `SHOW_INFO_PANEL` (bool) — show API / time info panel
+ - `debugHourOverride` (int) — set hour manually when >= 0
+
+ Notes:
+ - The sketch expects to run from the `animation_demo` folder in Processing.
+ - Small helper files (Tx, Rx) live alongside this sketch and are used for
+   streaming/preview but are not required to run the main animation.
+
+ See README.md at the project root for run instructions.
+*/
+
 import processing.video.*;
 import java.util.ArrayList;
 

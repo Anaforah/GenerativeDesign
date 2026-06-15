@@ -1,3 +1,13 @@
+/*
+ MotionParticle.pde
+
+ Purpose:
+ - Small helper class used by `animation_demo.pde` to render short-lived
+   trailing particles created from motion detections. Each instance maintains
+   position, velocity and a life counter and exposes `update()` and
+   `display()` methods.
+*/
+
 class MotionParticle {
   float x, y;
   float speed;

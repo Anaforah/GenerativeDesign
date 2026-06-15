@@ -1,3 +1,12 @@
+/*
+ raindrop.pde
+
+ Purpose:
+ - Represents an individual raindrop drawn onto the canvas. Construct with
+   a precipitation `intensity` (0..1) which affects speed, brightness and
+   spawn frequency (handled externally by `animation_demo.pde`).
+*/
+
 class RainDrop {
   float x, y;
   float speed;
